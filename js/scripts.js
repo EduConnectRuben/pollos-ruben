@@ -1,0 +1,321 @@
+document.addEventListener('DOMContentLoaded', () => {
+
+    // ===================================================================
+    // 1. ESTADO GLOBAL DE LA APLICACIÓN
+    // ===================================================================
+    
+    const initialMenuItems = [
+        {"id":1,"name":"Hamburguesa Simple","category":"hamburguesas","price":15.00,"description":"Carne jugosa, lechuga fresca, tomate y nuestras salsas clásicas.","image":"images/hamb simple.png","stock":20},
+        {"id":2,"name":"Hamburguesa Doble","category":"hamburguesas","price":25.00,"description":"Doble porción de carne y queso para los verdaderos amantes de las burgers.","image":"images/hamb doble.png","stock":15},
+        {"id":13,"name":"Hamburguesa Especial","category":"hamburguesas","price":30.00,"description":"Con tocino crujiente, aros de cebolla y nuestra salsa barbacoa secreta.","image":"images/hamb especial.png","stock":10},
+        {"id":3,"name":"Lomito Simple","category":"lomitos","price":20.00,"description":"Tierno lomito de res a la plancha, con chimichurri, lechuga y tomate.","image":"images/lomito simple.png","stock":10},
+        {"id":4,"name":"Lomito Doble","category":"lomitos","price":30.00,"description":"El doble de sabor con extra lomito y huevo frito.","image":"images/lomito doble.png","stock":8},
+        {"id":15,"name":"Lomito Especial","category":"lomitos","price":35.00,"description":"El rey de la casa: lomito, doble queso, tocino, huevo y pimientos.","image":"images/lomito especial.png","stock":7},
+        {"id":6,"name":"Pollo Económico","category":"pollos","price":15.00,"description":"Una presa de nuestro delicioso pollo con una porción de papas fritas.","image":"images/pollo eco.png","stock":15},
+        {"id":5,"name":"Pollo Cuarto","category":"pollos","price":20.00,"description":"Jugoso cuarto de pollo marinado a las brasas, acompañado de papas y ensalada.","image":"images/pollo cuarto.png","stock":12},
+        {"id":16,"name":"Pollo Especial","category":"pollos","price":30.00,"description":"Un jugoso cuarto de pollo con chorizo, papas fritas especiales y doble ensalada.","image":"images/pollo especial.png","stock":10},
+        {"id":7,"name":"Coca-Cola 2Litros","category":"sodas","price":15.00,"description":"La clásica e inconfundible gaseosa para acompañar tu comida.","image":"images/cocacola.png","stock":50},
+        {"id":8,"name":"Fanta 2Litros","category":"sodas","price":15.00,"description":"Refrescante sabor a naranja que te encantará.","image":"images/fanta.png","stock":40},
+        {"id":9,"name":"Sprite 2Litros","category":"sodas","price":15.00,"description":"El toque cítrico perfecto para tu paladar.","image":"images/sprite.png","stock":0},
+        {"id":10,"name":"Vaso de Limonada","category":"refrescos","price":3.00,"description":"Hecha con limones frescos, ideal para calmar la sed.","image":"images/limonada.png","stock":18},
+        {"id":11,"name":"Vaso de Mocochinchi","category":"refrescos","price":3.00,"description":"Bebida tradicional a base de durazno deshidratado y canela.","image":"images/mocochinchi.png","stock":9},
+        {"id":12,"name":"Vaso de Chicha","category":"refrescos","price":3.00,"description":"Clásico refresco  hecho de maíz morado, piña y especias.","image":"images/chicha.png","stock":4}
+    ];
+
+    let menuItems = []; 
+    let cart = [];
+    let pdfGenerator = null;
+
+    function initApp() {
+        loadStockData();
+        loadCartFromStorage();
+        setupAllPages();
+    }
+    
+    function loadStockData() {
+        const storedStock = localStorage.getItem('productStock');
+        if (storedStock) {
+            menuItems = JSON.parse(storedStock);
+        } else {
+            menuItems = initialMenuItems;
+            localStorage.setItem('productStock', JSON.stringify(menuItems));
+        }
+    }
+
+    function setupAllPages() {
+        setupNavigationAndLogin();
+        setupSuccessModal();
+        updateCartCounter();
+        setupMenuPage();
+        setupCartPage();
+        setupReservationPage();
+    }
+
+    const loadCartFromStorage = () => cart = JSON.parse(localStorage.getItem('shoppingCart')) || [];
+    const saveCartToStorage = () => { localStorage.setItem('shoppingCart', JSON.stringify(cart)); updateCartCounter(); };
+
+    const addToCart = (itemId) => {
+        const itemInMenu = menuItems.find(i => i.id === itemId);
+        const itemInCart = cart.find(i => i.id === itemId);
+        const quantityInCart = itemInCart ? itemInCart.quantity : 0;
+        if (quantityInCart >= itemInMenu.stock) return showNotification(`No hay más stock de ${itemInMenu.name}`, 'error');
+        if (itemInCart) itemInCart.quantity++; else cart.push({ ...itemInMenu, quantity: 1 });
+        showNotification(`${itemInMenu.name} añadido al carrito!`);
+        saveCartToStorage();
+        renderMenu();
+    };
+
+    const updateCartQuantity = (itemId, newQuantity) => {
+        const cartItem = cart.find(i => i.id === itemId);
+        if (!cartItem) return;
+        const itemInMenu = menuItems.find(i => i.id === itemId);
+        if (newQuantity > itemInMenu.stock) newQuantity = itemInMenu.stock;
+        if (newQuantity <= 0) cart = cart.filter(i => i.id !== itemId); else cartItem.quantity = newQuantity;
+        saveCartToStorage();
+        renderCartPage();
+        renderMenu();
+    };
+    
+    const updateCartCounter = () => {
+        const counter = document.getElementById('cart-counter');
+        if (counter) counter.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+    };
+
+    const updateStockAfterPurchase = () => {
+        cart.forEach(cartItem => {
+            const stockItem = menuItems.find(stockItem => stockItem.id === cartItem.id);
+            if (stockItem) stockItem.stock -= cartItem.quantity;
+        });
+        localStorage.setItem('productStock', JSON.stringify(menuItems));
+    };
+
+    function renderMenu() {
+        const menuGrid = document.getElementById('menu-grid');
+        if (!menuGrid) return;
+        const searchTerm = document.getElementById('search-input')?.value.toLowerCase() || '';
+        const category = document.getElementById('category-filter')?.value || 'all';
+        let itemsToRender = menuItems;
+        if (category !== 'all') itemsToRender = itemsToRender.filter(item => item.category === category);
+        if (searchTerm) itemsToRender = itemsToRender.filter(item => item.name.toLowerCase().includes(searchTerm));
+        menuGrid.innerHTML = '';
+        if (itemsToRender.length === 0) menuGrid.innerHTML = '<p style="text-align: center;">No se encontraron productos.</p>';
+        itemsToRender.forEach(item => {
+            const quantityInCart = cart.find(ci => ci.id === item.id)?.quantity || 0;
+            const currentStock = item.stock - quantityInCart;
+            let stockStatus, stockText;
+            if (currentStock > 10) { stockStatus = 'available'; stockText = 'Disponible'; } 
+            else if (currentStock > 5) { stockStatus = 'few-left'; stockText = `¡Quedan solo ${currentStock}!`; } 
+            else if (currentStock > 0) { stockStatus = 'last-units'; stockText = `¡Últimas ${currentStock} unidades!`; } 
+            else { stockStatus = 'not-available'; stockText = 'Agotado'; }
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<img src="${item.image}" alt="${item.name}" class="card-img"><div class="card-body"><h3 class="card-title">${item.name}</h3><p class="card-text">${item.description}</p><div class="card-footer"><div><p class="price">Bs ${item.price.toFixed(2)}</p><span class="stock ${stockStatus}">${stockText}</span></div><button class="cta-button add-to-cart-btn" data-id="${item.id}" ${currentStock === 0 ? 'disabled' : ''}>Añadir</button></div></div>`;
+            menuGrid.appendChild(card);
+        });
+    }
+    
+    function renderCartPage() {
+        const cartItemsList = document.getElementById('cart-items-list');
+        if (!cartItemsList) return;
+        const cartTotalPrice = document.getElementById('cart-total-price');
+        cartItemsList.innerHTML = '';
+        if (cart.length === 0) {
+            cartItemsList.innerHTML = '<p>Tu carrito está vacío. <a href="menu.html">¡Ve a llenarlo!</a></p>';
+            cartTotalPrice.textContent = 'Bs 0.00';
+            document.getElementById('checkout-btn').disabled = true;
+            return;
+        }
+        document.getElementById('checkout-btn').disabled = false;
+        let total = 0;
+        cart.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'cart-item';
+            // CORRECCIÓN CLAVE: Se añaden botones de + y - y se cambia el input de cantidad.
+            itemElement.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" class="cart-item-img">
+                <div class="cart-item-info">
+                    <h4 class="cart-item-title">${item.name}</h4>
+                    <p class="cart-item-price">Bs ${item.price.toFixed(2)}</p>
+                </div>
+                <div class="cart-item-actions">
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" data-id="${item.id}" data-action="decrease">-</button>
+                        <input type="number" value="${item.quantity}" min="1" max="${item.stock}" data-id="${item.id}" class="quantity-input" readonly>
+                        <button class="quantity-btn" data-id="${item.id}" data-action="increase">+</button>
+                    </div>
+                    <button class="remove-item-btn" data-id="${item.id}">&times;</button>
+                </div>`;
+            cartItemsList.appendChild(itemElement);
+            total += item.price * item.quantity;
+        });
+        cartTotalPrice.textContent = `Bs ${total.toFixed(2)}`;
+    }
+
+    function setupMenuPage() {
+        const menuPageContent = document.getElementById('menu-grid');
+        if (!menuPageContent) return;
+        renderMenu();
+        document.getElementById('search-input').addEventListener('input', renderMenu);
+        document.getElementById('category-filter').addEventListener('change', renderMenu);
+        menuPageContent.addEventListener('click', e => {
+            if (e.target.classList.contains('add-to-cart-btn')) addToCart(Number(e.target.dataset.id));
+        });
+    }
+
+    function setupCartPage() {
+        const cartContainer = document.getElementById('cart-container');
+        if (!cartContainer) return;
+
+        // CORRECCIÓN CLAVE: Se unifica el manejo de clics para todos los botones.
+        cartContainer.addEventListener('click', e => {
+            const target = e.target;
+            const itemId = Number(target.dataset.id);
+
+            if (target.classList.contains('remove-item-btn')) {
+                updateCartQuantity(itemId, 0);
+            }
+
+            if (target.classList.contains('quantity-btn')) {
+                const action = target.dataset.action;
+                const cartItem = cart.find(item => item.id === itemId);
+                if (cartItem) {
+                    let newQuantity = cartItem.quantity;
+                    if (action === 'increase') {
+                        newQuantity++;
+                    } else if (action === 'decrease') {
+                        newQuantity--;
+                    }
+                    updateCartQuantity(itemId, newQuantity);
+                }
+            }
+        });
+
+        document.getElementById('checkout-btn').addEventListener('click', () => {
+            showSuccessModal('¡Pedido Realizado!', 'Tu pedido ha sido procesado exitosamente.', generateOrderPDF);
+        });
+        renderCartPage();
+    }
+
+    function setupReservationPage() {
+        const reservationForm = document.getElementById('reservation-form');
+        if (!reservationForm) return;
+        reservationForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const reservationData = Object.fromEntries(new FormData(reservationForm).entries());
+            showSuccessModal('¡Reserva Confirmada!', 'Tu mesa ha sido reservada con éxito.', () => generateReservationPDF(reservationData));
+            reservationForm.reset();
+        });
+    }
+
+    function setupNavigationAndLogin() {
+        const navToggle = document.querySelector('.mobile-nav-toggle');
+        const primaryNav = document.getElementById('primary-navigation');
+        navToggle?.addEventListener('click', () => {
+            const isVisible = primaryNav.getAttribute('data-visible') === 'true';
+            primaryNav.setAttribute('data-visible', !isVisible);
+            navToggle.setAttribute('aria-expanded', !isVisible);
+        });
+        const userSessionContainer = document.getElementById('user-session-container');
+        const loginModal = document.getElementById('login-modal');
+        const closeLoginModalBtn = document.getElementById('close-login-modal-btn');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const updateNav = () => {
+            const user = JSON.parse(localStorage.getItem('loggedInUser'));
+            userSessionContainer.innerHTML = user ? `<span class="nav-link">Hola, ${user.username}</span><a class="nav-link" href="#" id="logout-btn">Logout</a>` : '<a class="nav-link" href="#" id="login-btn">Login</a>';
+            if (user) document.getElementById('logout-btn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('loggedInUser'); updateNav(); });
+            else document.getElementById('login-btn').addEventListener('click', (e) => { e.preventDefault(); loginModal.classList.add('show'); });
+        };
+        const handleLogin = (e) => {
+            e.preventDefault();
+            if (loginForm.username.value === 'cliente' && loginForm.password.value === '1234') {
+                localStorage.setItem('loggedInUser', JSON.stringify({ username: 'Cliente' }));
+                loginModal.classList.remove('show');
+                loginError.style.display = 'none';
+                loginForm.reset();
+                updateNav();
+            } else {
+                loginError.style.display = 'block';
+            }
+        };
+        closeLoginModalBtn?.addEventListener('click', () => loginModal.classList.remove('show'));
+        loginForm?.addEventListener('submit', handleLogin);
+        updateNav();
+    }
+
+    function setupSuccessModal() {
+        const successModal = document.getElementById('success-modal');
+        const closeBtn = document.getElementById('close-success-modal-btn');
+        const generatePdfBtn = document.getElementById('generate-pdf-btn');
+        closeBtn?.addEventListener('click', () => successModal.classList.remove('show'));
+        generatePdfBtn?.addEventListener('click', () => {
+            if (typeof pdfGenerator === 'function') pdfGenerator();
+            successModal.classList.remove('show');
+        });
+    }
+
+    function showSuccessModal(title, message, pdfGenFunc) {
+        document.getElementById('success-modal-title').textContent = title;
+        document.getElementById('success-modal-message').textContent = message;
+        pdfGenerator = pdfGenFunc;
+        document.getElementById('success-modal').classList.add('show');
+    }
+
+    function generateOrderPDF() {
+        if (typeof window.jspdf === 'undefined') return showNotification("Error: Librería PDF no cargada.", "error");
+        if (cart.length === 0) return showNotification("El carrito está vacío.", "error");
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const user = JSON.parse(localStorage.getItem('loggedInUser'));
+        doc.setFontSize(22); doc.setFont('helvetica', 'bold');
+        doc.text('Comprobante de Pedido - Pollos Rubén', 105, 20, { align: 'center' });
+        doc.setFontSize(12); doc.setFont('helvetica', 'normal');
+        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 35);
+        doc.text(`Cliente: ${user ? user.username : 'Invitado'}`, 20, 41);
+        const tableColumn = ["Producto", "Cantidad", "Precio Unit.", "Subtotal"];
+        const tableRows = []; let total = 0;
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            tableRows.push([item.name, item.quantity, `Bs ${item.price.toFixed(2)}`, `Bs ${itemTotal.toFixed(2)}`]);
+            total += itemTotal;
+        });
+        doc.autoTable({ head: [tableColumn], body: tableRows, startY: 50 });
+        doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+        doc.text(`Total Pagado: Bs ${total.toFixed(2)}`, 190, doc.lastAutoTable.finalY + 15, { align: 'right' });
+        doc.save(`pedido-fastfood-${Date.now()}.pdf`);
+        updateStockAfterPurchase();
+        cart = []; 
+        saveCartToStorage(); 
+        renderCartPage(); 
+        renderMenu();
+    }
+
+    function generateReservationPDF(data) {
+        if (typeof window.jspdf === 'undefined') return showNotification("Error: Librería PDF no cargada.", "error");
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const user = JSON.parse(localStorage.getItem('loggedInUser'));
+        doc.setFontSize(22); doc.setFont('helvetica', 'bold');
+        doc.text('Comprobante de Reserva - Pollos Rubén', 105, 20, { align: 'center' });
+        doc.setFontSize(12); doc.setFont('helvetica', 'normal');
+        doc.text(`Fecha de Emisión: ${new Date().toLocaleDateString()}`, 20, 35);
+        doc.text(`Reservado por: ${user ? user.username : data.name}`, 20, 41);
+        doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+        doc.text('Detalles de la Reserva', 20, 60);
+        doc.autoTable({ startY: 65, theme: 'plain', body: [['Nombre:', data.name], ['Email:', data.email], ['Fecha:', data.date], ['Hora:', data.time], ['Personas:', data.guests]] });
+        doc.setFontSize(10);
+        doc.text('Por favor, presenta este comprobante al llegar al restaurante.', 20, doc.lastAutoTable.finalY + 20);
+        doc.save(`reserva-fastfood-${Date.now()}.pdf`);
+    }
+
+    function showNotification(message, type = 'success') {
+        const el = document.getElementById('notification');
+        if (!el) return;
+        el.textContent = message;
+        el.style.background = type === 'error' ? 'linear-gradient(to right, #D32F2F, #E64A19)' : 'linear-gradient(to right, #43a047, #66bb6a)';
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 3000);
+    };
+    
+    initApp();
+});

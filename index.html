@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="images/logo.png" type="image/x-icon">
+    <link rel="apple-touch-icon" href="images/logo.png">
+    <link rel="shortcut icon" href="images/logo.png" type="image/x-icon">
+    <title>Inicio</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header class="encabezado">
+        <a href="index.html" class="logo-link"><h1 id="titulo">Pollos  Rubén</h1></a>
+        <button class="mobile-nav-toggle" aria-controls="primary-navigation" aria-expanded="false">
+            <span class="sr-only">Menú</span>
+        </button>
+        <nav>
+            <ul id="primary-navigation" class="navigation" data-visible="false">
+                <li><a class="nav-link active" href="index.html">Inicio</a></li>
+                <li><a class="nav-link" href="menu.html">Menú</a></li>
+                <li><a class="nav-link cart-icon-link" href="pedido.html" aria-label="Ver carrito"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17,18C15.89,18 15,18.89 15,20A2,2 0 0,0 17,22A2,2 0 0,0 19,20C19,18.89 18.1,18 17,18M1,2V4H3L6.6,11.59L5.24,14.04C5.09,14.32 5,14.65 5,15A2,2 0 0,0 7,17H19V15H7.42A0.25,0.25 0 0,1 7.17,14.75L7.2,14.64L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5C20.95,5.34 21,5.17 21,5A1,1 0 0,0 20,4H5.21L4.27,2M7,18C5.89,18 5,18.89 5,20A2,2 0 0,0 7,22A2,2 0 0,0 9,20C9,18.89 8.1,18 7,18Z"/></svg><span id="cart-counter">0</span></a></li>
+                <li><a class="nav-link" href="reservas.html">Reservas</a></li>
+                <li id="user-session-container"></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="hero">
+            <h2>El Sabor que te Mueve</h2>
+            <p>Ingredientes frescos, recetas explosivas y la velocidad que necesitas.</p>
+            <a href="menu.html" class="cta-button">Ver el Menú Ahora</a>
+        </section>
+        <section id="chefs" class="page-section">
+            <h2>Nuestros Maestros del Sabor</h2>
+            <div class="card-container">
+                <div class="card"><img src="https://images.pexels.com/photos/4252136/pexels-photo-4252136.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Foto del Chef 1" class="card-img"><div class="card-body"><h3 class="card-title">Chef Ana Torres</h3><p class="card-text">Especialista en "Smash Burgers". Ana ha perfeccionado la técnica para lograr hamburguesas ultra jugosas con una costra caramelizada irresistible.</p></div></div>
+                <div class="card"><img src="https://images.pexels.com/photos/7633215/pexels-photo-7633215.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Foto del Chef 2" class="card-img"><div class="card-body"><h3 class="card-title">Marco Diaz</h3><p class="card-text">Rey de las "Papas Cargadas". Marco transforma una simple papa frita en una obra de arte culinaria con sus toppings y salsas secretas.</p></div></div>
+            </div>
+        </section>
+        <section id="ubicacion" class="page-section">
+            <h2>Encuéntranos Aquí</h2>
+            <p>Visítanos en el corazón de la ciudad para una experiencia inolvidable.</p>
+            <div class="map-container"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3901.954032592398!2d-77.0368700851876!3d-12.046374991468165!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9105c8b5d8a2a22f%3A0x4a4a4a4a4a4a4a4a!2sPlaza%20Mayor%20de%20Lima!5e0!3m2!1ses!2spe!4v1620929973801!5m2!1ses!2spe" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"></iframe></div>
+        </section>
+    </main>
+
+    <footer class="pie-de-pagina">
+        <p>&copy; 2025 Fast Food Delights. Todos los derechos reservados.</p>
+        <div class="social-links"><a href="#">Facebook</a> | <a href="#">Instagram</a> | <a href="#">TikTok</a></div>
+    </footer>
+
+    <div id="login-modal" class="modal-backdrop"><div class="modal-content"><button id="close-login-modal-btn" class="modal-close">&times;</button><h3>Iniciar Sesión</h3><form id="login-form" class="form-container" style="box-shadow: none; padding: 0;"><div class="form-group"><label for="username">Usuario (prueba: cliente)</label><input type="text" id="username" required></div><div class="form-group"><label for="password">Contraseña (prueba: 1234)</label><input type="password" id="password" required></div><p id="login-error" style="color: red; display: none; text-align: center;">Usuario o contraseña incorrectos.</p><button type="submit" class="cta-button">Entrar</button></form></div></div>
+    <div id="success-modal" class="modal-backdrop"><div class="modal-content"><button id="close-success-modal-btn" class="modal-close">&times;</button><h3 id="success-modal-title">¡Éxito!</h3><p id="success-modal-message">Tu operación se completó.</p><button id="generate-pdf-btn" class="cta-button">Imprimir PDF</button></div></div>
+    <div id="notification" class="notification"></div>
+    <script src="js/scripts.js"></script>
+</body>
+</html>
