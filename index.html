@@ -11,6 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Link para instalar a pantalla -->
+<link rel="manifest" href="/instalar/manifest.json">
 </head>
 <body>
 
@@ -59,5 +61,7 @@
     <div id="success-modal" class="modal-backdrop"><div class="modal-content"><button id="close-success-modal-btn" class="modal-close">&times;</button><h3 id="success-modal-title">¡Éxito!</h3><p id="success-modal-message">Tu operación se completó.</p><button id="generate-pdf-btn" class="cta-button">Imprimir PDF</button></div></div>
     <div id="notification" class="notification"></div>
     <script src="js/scripts.js"></script>
+    <!-- script para instalar a pantalla -->
+<script src="/instalar/pwa.js"></script>
 </body>
 </html>
